@@ -38,6 +38,10 @@ async def on_message(message):
         response = f'hello human {message.author}'
         print(f'sent {response}')
         await message.channel.send(response)
+        if message.channel == rconChannel:
+                rc.connect()
+                rc.authenticate()
+                rc.execute("echo bot online").body.decode('utf-8', 'ignore')
     if message.channel == rconChannel:
         await message.channel.send(rc.execute(message.content).body.decode('utf-8', 'ignore'))
     
