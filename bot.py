@@ -1,16 +1,34 @@
+
+#imports
 import os
 import discord
 import dotenv
 from valve import rcon
 import asyncio
-#dotenv stuff
-from dotenv import load_dotenv #import loading .env function
+from dotenv import load_dotenv 
+
+#definitions
 load_dotenv() #load .env
 TOKEN = os.getenv("TOKEN") #get token from .env and define it
-
 client = discord.Client()
 
+#global variables, because they're annoying to implement otherwise
 global rconChannel
+
+
+def connectServer():
+    #get rcon info from .env
+    rconAdress = (os.getenv("RCONADRESS"), int(os.getenv("RCONPORT"))) #why is this a tuple with port and adress? I DON'T KNOW, IT DOESN'T MAKE ANY SENSE!
+    rconPassword = os.getenv("RCONPASSWORD")
+    global rc
+    try: #remove existing connection
+        del(rc)
+    except:
+        pass
+    rc = rcon.RCON(rconAdress, rconPassword) #make new one
+    rc.connect() #connect to it
+    rc.authenticate() #authenticate with it
+    rc.execute("echo bot online").body.decode('utf-8', 'ignore') #print "bot online" in the console of the server
 
 @client.event
 async def on_ready():
@@ -18,14 +36,7 @@ async def on_ready():
     print(f'{client.user} has connected to Discord!')
     global rconChannel
     rconChannel = client.get_channel(int(rconChannelId))
-    #get rcon info from .env
-    rconAdress = (os.getenv("RCONADRESS"), int(os.getenv("RCONPORT")))
-    rconPassword = os.getenv("RCONPASSWORD")
-    global rc
-    rc = rcon.RCON(rconAdress, rconPassword)
-    rc.connect()
-    rc.authenticate()
-    rc.execute("echo bot online").body.decode('utf-8', 'ignore')
+
 
 
 @client.event
@@ -38,14 +49,21 @@ async def on_message(message):
         response = f'hello human {message.author}'
         print(f'sent {response}')
         await message.channel.send(response)
-        if message.channel == rconChannel:
-                rc.connect()
-                rc.authenticate()
-                rc.execute("echo bot online").body.decode('utf-8', 'ignore')
+        
     if message.channel == rconChannel:
-        await message.channel.send(rc.execute(message.content).body.decode('utf-8', 'ignore'))
+        if message.content == "!connect":
+            await message.channel.send("attempting to connect to the server")
+            try:
+                connectServer()
+            except:
+                await message.channel.send("error connecting to the server")
+
+            await message.channel.send("connected to the server")
+            await message.channel.send(rc.execute("status").body.decode('utf-8', 'ignore'))
+        else:
+            await message.channel.send(rc.execute(message.content).body.decode('utf-8', 'ignore'))
     
 
-
+connectServer()
 
 client.run(TOKEN)
