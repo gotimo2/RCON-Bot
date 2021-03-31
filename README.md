@@ -10,3 +10,9 @@ this bot will allow you to input details for a source server, and details for a 
 simply input details of a discord text channel that the bot has access to and details of a source server in .env, start the bot with python3 bot.py and pray to god the bot works!
 
 it is known that the bot's connection to a server will break on a map change. since i'm too lazy to implement an actual solution to this issue, saying "!connect" in the rcon channel should restart the connection to the server.
+
+## Prerequisites
+
+- python-dotenv
+- discord.py
+- python-valve
