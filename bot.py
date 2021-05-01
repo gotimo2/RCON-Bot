@@ -3,14 +3,16 @@
 import os
 import discord
 import dotenv
-from valve import rcon
+from valve import rcon, source
+import valve
 import asyncio
-from dotenv import load_dotenv 
+from dotenv import load_dotenv
 
 #definitions
 load_dotenv() #load .env
 TOKEN = os.getenv("TOKEN") #get token from .env and define it
 client = discord.Client()
+
 
 #global variables, because they're annoying to implement otherwise
 global rconChannel
@@ -29,6 +31,7 @@ def connectServer():
     rc.connect() #connect to it
     rc.authenticate() #authenticate with it
     rc.execute("echo bot online").body.decode('utf-8', 'ignore') #print "bot online" in the console of the server
+    
 
 @client.event
 async def on_ready(): #when the bot connects
@@ -36,6 +39,8 @@ async def on_ready(): #when the bot connects
     print(f'{client.user} has connected to Discord!') #print that the bot's connected
     global rconChannel
     rconChannel = client.get_channel(int(rconChannelId)) #get the rcon channel by id
+    await client.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name="A source server"))
+
 
 
 
@@ -50,7 +55,8 @@ async def on_message(message):
         print(f'sent {response}')
         await message.channel.send(response)
     if message.channel == rconChannel:
-        if message.content == "!connect": #reconnect command
+        command = message.content
+        if command == "!connect" or command == "!c": #reconnect command
             await message.channel.send("attempting to connect to the server")
             try:
                 connectServer()
@@ -58,11 +64,19 @@ async def on_message(message):
                 await message.channel.send("error connecting to the server")
             #if no bug arises, the bot connected
             await message.channel.send("connected to the server")
-            #get status to print
+            #execute status on connect
             await message.channel.send(rc.execute("status").body.decode('utf-8', 'ignore'))
             #if no command is done, just execute any message in the rcon channel
         else:
-            await message.channel.send(rc.execute(message.content).body.decode('utf-8', 'ignore'))
+            try:
+                print(f"{message.author}:{message.content}")
+                message.channel.send(rc.execute(message.content).body.decode('utf-8', 'ignore'))
+            except:
+                print("bot disconnected, reconnecting...")
+                connectServer()
+                message.channel.send(rc.execute(message.content).body.decode('utf-8', 'ignore'))
+
+
     
 
 connectServer()
