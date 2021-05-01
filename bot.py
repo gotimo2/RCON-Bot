@@ -70,11 +70,11 @@ async def on_message(message):
         else:
             try:
                 print(f"{message.author}:{message.content}")
-                message.channel.send(rc.execute(message.content).body.decode('utf-8', 'ignore'))
+                await message.channel.send(rc.execute(message.content).body.decode('utf-8', 'ignore'))
             except:
                 print("bot disconnected, reconnecting...")
                 connectServer()
-                message.channel.send(rc.execute(message.content).body.decode('utf-8', 'ignore'))
+                await message.channel.send(rc.execute(message.content).body.decode('utf-8', 'ignore'))
 
 
     
