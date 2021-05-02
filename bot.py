@@ -4,6 +4,7 @@ import os
 import discord
 import dotenv
 from valve import rcon, source
+from valve.source import a2s
 import valve
 import asyncio
 from dotenv import load_dotenv
@@ -16,6 +17,11 @@ client = discord.Client()
 
 #global variables, because they're annoying to implement otherwise
 global rconChannel
+
+
+def getServerName(rconAdress : tuple):
+    sq = a2s.ServerQuerier(rconAdress) #get server 
+    return sq.info()["server_name"]
 
 
 def connectServer():
@@ -34,29 +40,37 @@ def connectServer():
     
 
 @client.event
-async def on_ready(): #when the bot connects
+async def on_ready(): #when the bot connects to discord
     rconChannelId = os.getenv("RCONCHANNELID") #get the rcon channel id
     print(f'{client.user} has connected to Discord!') #print that the bot's connected
     global rconChannel
     rconChannel = client.get_channel(int(rconChannelId)) #get the rcon channel by id
-    await client.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name="A source server"))
+    rconAdress = (os.getenv("RCONADRESS"), int(os.getenv("RCONPORT"))) #make a tuple for rconAdress
+    await client.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=getServerName(rconAdress))) #change discord presence of the bot to "watching (your server name)"
 
 
 
 
 @client.event
 async def on_message(message):
+
     global rconChannel
     global rc
+
     if message.author == client.user: #we don't want the bot to send commands to itself /shrug
         return
+
+    if message.content.startswith("//"): #send messages in the channel without actually making them commands with //
+        return
+
     if message.content == 'hello bot': #ping-like command
         response = f'hello human {message.author}'
         print(f'sent {response}')
         await message.channel.send(response)
+
     if message.channel == rconChannel:
         command = message.content
-        if command == "!connect" or command == "!c": #reconnect command
+        if command == "!connect" or command == "!c": #reconnect command, rather redundant now that it auto-reconnects, but i'll keep it just in case it might be useful
             await message.channel.send("attempting to connect to the server")
             try:
                 connectServer()
